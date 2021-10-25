@@ -1,4 +1,4 @@
-# fcs-analyzer
+# fcs-analyzer-package
 Analyzes FCS data, fits data with least-squares fitting, and outputs data and figures in convenient folders.
 
 Credit:

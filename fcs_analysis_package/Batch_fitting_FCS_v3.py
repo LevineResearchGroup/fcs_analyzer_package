@@ -31,7 +31,18 @@ from uncertainties.umath import *
 import sys
 sys.path.append("./lib") #point python to location containing the below three modules
 import FCS_fitfunc as ff
-import SPT_reader_edit as spt
+import platform
+if platform.system() == ' Windows':
+    import SPT_reader as spt
+    print('WINDOWS')  
+elif platform.system() == 'Linux':
+    import SPT_reader_edit as spt
+    print('LINUX')  
+elif platform.system() == 'Darwin':
+    import SPT_reader_edit as spt
+    print('MAC')  
+else:
+    print('OH NO, NO OPERATING SYSTEM')  
 import FCS_helpful as fcs
 
 # Edit the font, font size, and axes width

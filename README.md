@@ -6,9 +6,10 @@ Initial files are writen by Greg Gomes.
 
 Contributors:
 -Levine Lab members-
-Greg Gomes
-Bryan Bogin
-Matt Steinsaltz
+Zachary Levine,
+Greg Gomes,
+Bryan Bogin,
+Matt Steinsaltz,
 Kamila Nurmakova
 
 

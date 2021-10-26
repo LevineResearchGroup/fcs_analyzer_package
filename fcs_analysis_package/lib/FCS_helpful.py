@@ -6,6 +6,9 @@ Created on Wed Mar 31 15:05:31 2021
 
 Updated with more functionalities by Bryan Bogin.
 
+
+Important note: viscosity here is temperature corrected water. High concentrations NaCl, GdmCl, glycerol, crowding agent etc., would violate that.
+
 """
 
 
@@ -79,7 +82,7 @@ def set_wavelength(laser):
     return wavelength
 
 def get_veff(td_ref, D_ref, set_kappa):
-    '''Options are "blue", "green", or "both"'''
+    '''Returns Veff in L "'''
     w = (4*D_ref*(td_ref/1000))**(0.5) #um   
     w = w*(1e-6) #now in meters
     #print(w)

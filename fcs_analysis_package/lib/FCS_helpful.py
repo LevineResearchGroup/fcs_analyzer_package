@@ -78,15 +78,16 @@ def set_wavelength(laser):
     
     return wavelength
 
-def get_veff(wavelength, k):
+def get_veff(td_ref, D_ref, set_kappa):
     '''Options are "blue", "green", or "both"'''
-    wavelength = set_wavelength(wavelength)
-    NA = 1.2
-    d = wavelength/(2*NA) #nm
-    w = d/0.8 #nm
-    veff = ((np.pi)**(3/2))*((w/1000)**3)*k #um^3 or 1fL
+    w = (4*D_ref*(td_ref/1000))**(0.5) #um   
+    w = w*(1e-6) #now in meters
+    #print(w)
+    kappa = set_kappa
+    Veff = ((np.pi)**(3/2)) * kappa * (w**3) #in m^3
+    Veff = Veff *1000 #now in L 
     
-    return veff
+    return Veff
 
 
 

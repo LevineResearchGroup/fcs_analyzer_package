@@ -26,7 +26,7 @@ plt.ylabel('log Rs')
 MW_0 = 90000 #Da molecular weight
 print(np.exp( m*np.log(MW_0) + b))
 
-R_0 = 0.72 #nm stokes radius
+R_0 = 0.5837 #nm stokes radius
 MW_est = np.exp((np.log(R_0)-b)/m)
 
 print(MW_est)

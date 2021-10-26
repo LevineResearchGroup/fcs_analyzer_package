@@ -1,2 +1,0 @@
-Downloaded from https://github.com/KULL-Centre/BME 4/29/2021
-Removed examples, notebooks, toy etc., to save space.

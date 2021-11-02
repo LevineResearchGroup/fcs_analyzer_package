@@ -14,6 +14,9 @@ B = Ch1, Al594, 50-100 ns
 
 Do not export with fits.
 
+Usage: Look for FIXME in code and make changes accordingly to fit
+application.
+
 @author: gwg24
 """
 
@@ -31,7 +34,18 @@ from uncertainties.umath import *
 import sys
 sys.path.append("./lib") #point python to location containing the below three modules
 import FCS_fitfunc as ff
-import SPT_reader_edit as spt
+import platform
+if platform.system() == ' Windows':
+    import SPT_reader as spt
+    print('WINDOWS')  
+elif platform.system() == 'Linux':
+    import SPT_reader_edit as spt
+    print('LINUX')  
+elif platform.system() == 'Darwin':
+    import SPT_reader_edit as spt
+    print('MAC')  
+else:
+    print('OH NO, YEET, NO OPERATING SYSTEM')  
 import FCS_helpful as fcs
 
 # Edit the font, font size, and axes width
@@ -47,9 +61,8 @@ plt.rcParams['axes.linewidth'] = 1
 
 '''One component model'''
 
-def simplefit(t, G, err, kappa = 5, triplet = 1, t_min = 1E-9, t_max = 1e7):
-    #0 = triplet off, 1 = triplet on
-    # 1-comp diffusion, triplet considered only if selected
+def simplefit(t, G, err, kappa = 5, triplet = False, t_min = 1E-9, t_max = 1e7):
+    # 1-comp diffusion, triplet considered only if set to True
     A0_guess = np.mean(G[:5])
     arg = abs(G - A0_guess/2)
     ind = np.argmin(arg)
@@ -59,7 +72,7 @@ def simplefit(t, G, err, kappa = 5, triplet = 1, t_min = 1E-9, t_max = 1e7):
     model = lmfit.Model(ff.diffusion_3d_triplet)
     params = model.make_params(A0=A0_guess, tau_diff=tau_guess)
     #Use triplet model or not.
-    if triplet == 1:
+    if triplet:
         params['T'].set(min=0, max=1, value=0.1)
         params['tau_t'].set(min=1E-9, max=0.05, value=10e-4)
     else:
@@ -71,7 +84,7 @@ def simplefit(t, G, err, kappa = 5, triplet = 1, t_min = 1E-9, t_max = 1e7):
     params['kappa'].set(value=kappa, vary=False)  # 3D model only
     
     weights = 1/err
-    t_max = 1e7
+    #t_max = 1e7
     #FIXME
     fitres = model.fit(G[np.logical_and(t < t_max, t > t_min)], timelag=t[np.logical_and(t < t_max, t > t_min)], params=params, method='least_squares',
                        weights=weights[np.logical_and(t < t_max, t > t_min)])
@@ -85,9 +98,8 @@ def simplefit(t, G, err, kappa = 5, triplet = 1, t_min = 1E-9, t_max = 1e7):
 
 '''Two componenet fitting'''
 
-def simplefit2(t, G, err, kappa = 5, tau_diff2_fix_value = 0.050, triplet = 1, t_min = 1E-9, t_max = 1e7):
-    #0 = triplet off, 1 = triplet on
-    # 1-comp diffusion, triplet considered only if selected
+def simplefit2(t, G, err, kappa = 5, tau_diff2_fix_value = 0.050, triplet = False, t_min = 1E-9, t_max = 1e7):
+    # 1-comp diffusion, triplet considered only if set to True
     # two component diffusion
     model = lmfit.Model(ff.twocomp_diffusion_3d_triplet)
     
@@ -100,22 +112,21 @@ def simplefit2(t, G, err, kappa = 5, tau_diff2_fix_value = 0.050, triplet = 1, t
     params = model.make_params(A0=A0_guess)
     params['A0'].set(min=0.00001, value = A0_guess)
     #Use triplet model or not.
-    if triplet == 1:
+    if triplet:
         params['T'].set(min=0, max=1, value=0.1)
         params['tau_t'].set(min=1E-9, max=0.05, value=10e-4)
     else:
         params['T'].set(value=0, vary=False)
         params['tau_t'].set(value=1e-4, vary=False)
-    # params['tau_diff1'].set(min=2*tau_diff2_fix_value, value = tau_guess) #slow component
     params['tau_diff1'].set(min=1e-6, value = tau_guess) #slow component
-    params['tau_diff2'].set(min=1e-6, value = tau_diff2_fix_value, vary = False) #fast component, usually fixed
+    params['tau_diff2'].set(min=1e-6, value = tau_diff2_fix_value, vary = False) #fast component, usually fixed #FIXME
     params['p1'].set(min = 0, max = 1, value = 0.5) #fraction slow
     params['Ginf'].set(value=0, vary = True)
     params['kappa'].set(value=kappa, vary=False)  # 3D model only
     
     # weights = np.ones_like(avg_G)
     weights = 1/err
-    t_max = 1e7
+    #t_max = 1e7
     fitres = model.fit(G[np.logical_and(t < t_max, t > t_min)], timelag=t[np.logical_and(t < t_max, t > t_min)], params=params, method='least_squares',
                        weights=weights[np.logical_and(t < t_max, t > t_min)])
     print('\nList of fitted parameters for %s: \n' % model.name)
@@ -128,17 +139,14 @@ def simplefit2(t, G, err, kappa = 5, tau_diff2_fix_value = 0.050, triplet = 1, t
 '''''''''''''''''''''Body'''''''''''''''''''''''''''
 ''''''''''''''''''''''''''''''''''''''''''''''''''
 
-'''Usage Options-Input required below''' #FIXME
+'''Usage Options. Input required below.'''
 
 ## Autocorrelation of donor, receptor, or cross-correlation?
 # Possible key values are DD (autocorrelation Donor Donor), AA (auto, accepptor acceptor), DxA (donor acceptor cross correlation)
-# key = 'DD'
-# Possible key values are DD (autocorrelation Donor Donor), AA (auto, accepptor acceptor), DxA (donor acceptor cross correlation)
 key = 'DD'
 
-#Fitting Model (Triplet? Yes/No)
-#0 = no, 1 = yes (by default)
-triplet = 1
+#Fitting Model (Triplet? True/False)
+triplet = True
 
 ##Min and max for fitting (units of ms)
 #Use really low and high values to use all data.
@@ -146,21 +154,21 @@ t_min = 1e-4 #ms
 t_max = 1e7 #ms
 
 '''Input Paramaters (from calibration-see FCS_calibration.py)'''
-set_kappa = 7.864                   # from calibration
-td_ref = ufloat(0.0344, 0.0001)     # from calibration (ms), A488 
+set_kappa = 7.799                  # from calibration
+td_ref = ufloat(0.0353, 0.0001)     # from calibration (ms), A488 
 D_ref = ufloat(470, 40)             # from literature, for calibration (um^2/s), Rho110 470 um^2/s  
 temperature_ref = ufloat(25, 0.5)   # temperature at which reference D was taken (celsius)
-temperature_lab = ufloat(22,0.5)    # our labs temeprature (celsius)
+temperature_lab = ufloat(21,0.5)    # our labs temeprature (celsius)
 
 '''Fix one component for two component difusion model)'''
 #tau_diff2_fix_value = 0.0437 #from 1-comp fit to monomer (ms)  #Free dye
-tau_diff2_fix_value = 0.0443 #Free dye    
+tau_diff2_fix_value = 0.2765
     
 Toffset = 0 #offset the time axis by some amount (make sure consistent with units for measurement_time (i.e., minutes, hours?))
 
 #FIXME, put your own path HERE
 path = "/Users/bab226/Documents/yale_research/iapp/fcs/fcs_analyzer_package/fcs_analysis_package/Data/BB_dextran_mixtures.sptw/"
-for name in glob.glob(path + "dextran_4k_5_min_10_14_21.dat"):
+for name in glob.glob(path + "dextran_40k_5_min_10_20_21.dat"):
     name = os.path.basename(name)[:-4]
     measurement_group = spt.Read_FCS(path + name)
     # measurement_group = spt.Read_FCS('')
@@ -226,14 +234,6 @@ for name in glob.glob(path + "dextran_4k_5_min_10_14_21.dat"):
         G = m[key]['G']
         err = m[key]['err']
         
-        #Subset of curves (if needed) #FIXME
-        start = 0
-        end = len(G)-1
-        
-        t = t[start:end]
-        G = G[start:end]
-        err = err[start:end]
-        
         Gsum = Gsum + G    
         
         print()
@@ -272,61 +272,48 @@ for name in glob.glob(path + "dextran_4k_5_min_10_14_21.dat"):
         N_1c_err.append(x.std_dev)
         
         
-        if 0:
-            #Plot each separately
-            width = 3.42
-            fig = plt.figure(figsize=(width,width/1.62))
-            ax = fig.add_axes([0, 0, 1, 1])
-            ax.errorbar(t,G, yerr = err, linewidth =1, label = mylabel, linestyle = '', marker = 'o', markersize = 2, color = colors[i])
         
-            ax.plot(t[np.logical_and(t < t_max, t > t_min)], fitres2c.best_fit, color = 'k', label = '2-comp', zorder = 10) #zorder forces best fit to plot on top errorbar
-            ax.plot(t[np.logical_and(t < t_max, t > t_min)], fitres1c.best_fit, color = 'm', label = '1-comp', linestyle = '--', zorder = 10) #zorder forces best fit to plot on top errorbar
+     
+        width = 3.42
+        fig, ax = plt.subplots(2, 1, figsize=(width,width/1.2), sharex=True,
+                           gridspec_kw={'height_ratios': [3, 1.2]})
+        plt.subplots_adjust(hspace=0.3)
+        ax[0].errorbar(t,G, yerr = err, linewidth =1, label = mylabel, linestyle = '', marker = 'o', markersize = 2, color = colors[i])
         
-            ax.set_xscale('log')
-            ax.set_xlabel(r'$\tau$ (ms)', labelpad=10)
-            ax.set_ylabel(r'$G(\tau)$', labelpad=10)
-            ax.legend()
-        else:
-            width = 3.42
-            fig, ax = plt.subplots(2, 1, figsize=(width,width/1.2), sharex=True,
-                               gridspec_kw={'height_ratios': [3, 1.2]})
-            plt.subplots_adjust(hspace=0.3)
-            ax[0].errorbar(t,G, yerr = err, linewidth =1, label = mylabel, linestyle = '', marker = 'o', markersize = 2, color = colors[i])
-            
-            
-            ax[0].plot(t[np.logical_and(t < t_max, t > t_min)], fitres2c.best_fit, color = 'k', label = '2-comp', zorder = 10) #zorder forces best fit to plot on top errorbar
-            ax[0].plot(t[np.logical_and(t < t_max, t > t_min)], fitres1c.best_fit, color = 'm', label = '1-comp', linestyle = '--', zorder = 10) #zorder forces best fit to plot on top errorbar
         
-            # resid1 = (G - fitres1c.best_fit)/err
-            # resid2 = (G - fitres2c.best_fit)/err
-            
-            ax[0].set_xscale('log')
-            ax[1].plot(t[np.logical_and(t < t_max, t > t_min)], fitres1c.residual, 'm')
-            ax[1].plot(t[np.logical_and(t < t_max, t > t_min)], fitres2c.residual, 'k')
-            # ax[1].plot(t, resid1, 'm')
-            # ax[1].plot(t, resid2, 'k')
-            
-            ax[1].set_xscale('log')
-            ax[0].legend()
-            mean_wres2 = np.mean(fitres2c.residual)
-            std_wres2 = np.std(fitres2c.residual)
-            std_wres1 = np.std(fitres1c.residual)
-            max_std = np.max([std_wres2,std_wres1])
-            # mean_wres = np.mean(resid2)
-            # std_wres = np.std(resid2)
-            # ax[1].set_ylim(-ym, ym)
-            ax[1].set_ylim(- 3*max_std, + 3*max_std )
-            ax[1].set_ylim(-5,5)
-            ax[1].set_xscale('log')
-            
-            for a in ax:
-                a.grid(True); a.grid(True, which='minor', lw=0.3)
-            ax[1].set_xlabel(r'$\tau$ (ms)', labelpad=5)
-            ax[0].set_ylabel(r'$G(\tau)$', labelpad=5)
-            # ax[0].set_ylabel('G(τ)')
-            ax[1].set_ylabel('wres', labelpad = 5)
-            # ax[0].set_title('Pseudo Autocorrelation')
-            # ax[1].set_xlabel('Time Lag, τ (s)');
+        ax[0].plot(t[np.logical_and(t < t_max, t > t_min)], fitres2c.best_fit, color = 'k', label = '2-comp', zorder = 10) #zorder forces best fit to plot on top errorbar
+        ax[0].plot(t[np.logical_and(t < t_max, t > t_min)], fitres1c.best_fit, color = 'm', label = '1-comp', linestyle = '--', zorder = 10) #zorder forces best fit to plot on top errorbar
+    
+        # resid1 = (G - fitres1c.best_fit)/err
+        # resid2 = (G - fitres2c.best_fit)/err
+        
+        ax[0].set_xscale('log')
+        ax[1].plot(t[np.logical_and(t < t_max, t > t_min)], fitres1c.residual, 'm')
+        ax[1].plot(t[np.logical_and(t < t_max, t > t_min)], fitres2c.residual, 'k')
+        # ax[1].plot(t, resid1, 'm')
+        # ax[1].plot(t, resid2, 'k')
+        
+        ax[1].set_xscale('log')
+        ax[0].legend()
+        mean_wres2 = np.mean(fitres2c.residual)
+        std_wres2 = np.std(fitres2c.residual)
+        std_wres1 = np.std(fitres1c.residual)
+        max_std = np.max([std_wres2,std_wres1])
+        # mean_wres = np.mean(resid2)
+        # std_wres = np.std(resid2)
+        # ax[1].set_ylim(-ym, ym)
+        ax[1].set_ylim(- 3*max_std, + 3*max_std )
+        ax[1].set_ylim(-5,5)
+        ax[1].set_xscale('log')
+        
+        for a in ax:
+            a.grid(True); a.grid(True, which='minor', lw=0.3)
+        ax[1].set_xlabel(r'$\tau$ (ms)', labelpad=5)
+        ax[0].set_ylabel(r'$G(\tau)$', labelpad=5)
+        # ax[0].set_ylabel('G(τ)')
+        ax[1].set_ylabel('wres', labelpad = 5)
+        # ax[0].set_title('Pseudo Autocorrelation')
+        # ax[1].set_xlabel('Time Lag, τ (s)');
         
         
         
@@ -340,6 +327,7 @@ for name in glob.glob(path + "dextran_4k_5_min_10_14_21.dat"):
     ax = fig.add_axes([0, 0, 1, 1])
     ax.plot(t,Gsum, linewidth =1, linestyle = '', marker = 'o', markersize = 2, color = 'k')
     ax.set_xscale('log')
+    plt.title('Average correlation curve over all measurements')
 
     #turn results into np arrays so we can do maths with them
     t_measurement = np.array(t_measurement)
@@ -352,11 +340,40 @@ for name in glob.glob(path + "dextran_4k_5_min_10_14_21.dat"):
     N_2c = np.array(N_2c)
     N_2c_err = np.array(N_2c_err)
     
+    ##NEED ATTENTION
+    w = (4*D_ref*(td_ref/1000))**(0.5) #um   
+    w = w*(1e-6) #now in meters
+    #print(w)
+    kappa = set_kappa
+    Veff = ((np.pi)**(3/2)) * kappa * (w**3) #in m^3
+    Veff = Veff *1000 #now in L 
+    
+    N = ufloat(np.mean(N_1c), np.std(N_1c)) #particles
+    N = N/(6.022E23) #particles/(particles/mol)  = mol
+
+    C = N/Veff #mol / L = M
+    
+    #See NEW function in FCS_helpful.py
+    #Veff = fcs.get_veff(td_ref, D_ref, set_kappa)  #in L #Greg, check maths, use real
+    
+    print('Veff in fL')
+    print(Veff*1E15)
+    
+    #***Commented for DELETION***
+    #Calculate Concentration from N_1c
+    # N = ufloat(np.mean(N_1c), np.std(N_1c)) #particles
+    # N = N/(6.022E23) #particles/(particles/mol)  = mol
+    # C = N/Veff #mol / L = M
+    # print('Concentration in nM')
+    # print(C*1e9)
+    
+    #This seems to work now  - Bryan
     #Calculate concentration from N_2c
     Na = 6.022*10**23
-    Veff = fcs.get_veff("green", set_kappa)  #fL units
-    C_2c = (N_2c/(Na*Veff*(10**(-15))))*10**9 #nM
-    C_2c_err = (N_2c_err/(Na*Veff*(10**(-15))))*10**9 #nM
+    N_mol_2c = N_2c/Na
+    N_mol_2c_err = N_2c_err/Na
+    C_2c = N_mol_2c/Veff.nominal_value*1E9 #nM
+    C_2c_err = N_mol_2c_err/Veff.nominal_value*1E9 #nM
     
     #Chi-squared from least-squares fitting 
     redchi2c = np.array(redchi2c)
@@ -369,11 +386,13 @@ for name in glob.glob(path + "dextran_4k_5_min_10_14_21.dat"):
     N_1c = np.array(N_1c)
     N_1c_err = np.array(N_1c_err)
     
+    ##NEED ATTENTION for same reasons as above
     #Calculate concentration from N_1c
     Na = 6.022*10**23
-    Veff = fcs.get_veff("green", set_kappa)  #fL units
-    C_1c = (N_1c/(Na*Veff*(10**(-15))))*10**9 #nM
-    C_1c_err = (N_1c_err/(Na*Veff*(10**(-15))))*10**9 #nM
+    N_mol = N_1c/Na
+    N_mol_err = N_1c_err/Na
+    C_1c = N_mol/Veff.nominal_value*1E9 #nM
+    C_1c_err = N_mol_err/Veff.nominal_value*1E9 #nM
     
     #convert diffusion times to D's and Rh's -- accepts ufloat type for td_ref and D_ref
     D2c_fast, eD1c = fcs.td2D(tau_fast2c, tau_fast_err2c, temperature_lab = temperature_lab, td_ref = td_ref, D_ref = D_ref, temperature_ref = temperature_ref )
@@ -384,6 +403,7 @@ for name in glob.glob(path + "dextran_4k_5_min_10_14_21.dat"):
     Rh1c, err_Rh1c = fcs.D2Rh(D1c, eD1c, temperature_lab = temperature_lab)
     
    
+    #To Greg, Not a layer too deep-->Want to generate summary for each .dat file.
     print()
     print()
     print('############')
@@ -392,29 +412,32 @@ for name in glob.glob(path + "dextran_4k_5_min_10_14_21.dat"):
     print('Mean 1-comp diffusion time = %.4f +/- %.5f ms' %(np.mean(tau_1c), np.std(tau_1c, ddof =1)))
     print('Mean 1-comp diffusion coeff = %.4f +/- %.5f um^2 s^-1' %(np.mean(D1c), np.std(D1c, ddof =1)))
     print('Mean 1-comp Rh = %.4f +/- %.5f nm' %(np.mean(Rh1c), np.std(Rh1c, ddof =1)))
+    print('Mean 1-comp N = %.4f +/- %.5f nm' %(np.mean(N_1c), np.std(N_1c, ddof =1)))
     print('Mean 1-comp redchi = %.4f +/- %.5f' %(np.mean(redchi1c), np.std(redchi1c, ddof =1)))
     
     print('Mean 2-comp slow diffusion time = %.4f +/- %.5f ms' %(np.mean(tau_slow2c), np.std(tau_slow2c, ddof =1)))
+    print('Mean 2-comp fast diffusion time = %.4f +/- %.5f ms' %(np.mean(tau_fast2c), np.std(tau_fast2c, ddof =1)))
     print('Mean 2-comp diffusion coeff slow = %.4f +/- %.5f um^2 s^-1' %(np.mean(D2c), np.std(D2c, ddof =1)))
+    print('Mean 2-comp diffusion coeff fast = %.4f +/- %.5f um^2 s^-1' %(np.mean(D2c_fast), np.std(D2c_fast, ddof =1)))
     print('Mean 2-comp Rh slow = %.4f +/- %.5f nm' %(np.mean(Rh2c), np.std(Rh2c, ddof =1)))
+    print('Mean 2-comp P1 = %.3f +/- %.3f nm' %(np.mean(p1), np.std(p1, ddof =1)))
     print('Mean 2-comp (chi-squared) redchi = %.4f +/- %.5f ' %(np.mean(redchi2c), np.std(redchi2c, ddof =1)))
     #color the plots according to whether you are looking at DD,AA or DxA
     color_dict = {"DD": 'b',
                   "AA": 'r',
                   "DxA": 'k'
                   }
-    
+        
     ''' Plots for two-comp fitting
     ''''''''''''''''''''''''''''''''''''''''''''''''''
-     '''
-
-#for i in range(1,int(len(D2c)*(31/60)),20):    #Convert looping units to minutes 
+    '''
+    
     width = 3.42
     fig = plt.figure(figsize=(width,width/1.62))
     ax = fig.add_axes([0, 0, 1, 1])
-    # ax.errorbar(t_measurement, tau_slow2c*1000, yerr = tau_slow_err2c*1000, linewidth =1, label = '', linestyle = '', marker = 'o', markersize = 4, color = color_dict[key])
-    #ax.set_xlim(i,i+20)
-    ax.set_ylim(0,500)
+    ax.errorbar(t_measurement, tau_slow2c*1000, yerr = tau_slow_err2c*1000, linewidth =1, label = '', linestyle = '', marker = 'o', markersize = 4, color = color_dict[key])
+    
+    #ax.set_ylim(0,500)
     ax.set_xlabel(r'time (min)', labelpad=10)
     ax.set_ylabel(r'$t_{d}$ ($\mathrm{\mu s}$)', labelpad=10)
     plt.savefig('./Figures/Slow_diffusion_time_' + key + '.png', dpi=300, transparent=False, bbox_inches='tight')
@@ -422,9 +445,9 @@ for name in glob.glob(path + "dextran_4k_5_min_10_14_21.dat"):
     width = 3.42
     fig = plt.figure(figsize=(width,width/1.62))
     ax = fig.add_axes([0, 0, 1, 1])
-    # ax.errorbar(t_measurement, D2c, yerr = eD2c, linewidth =1, label = '', linestyle = '', marker = 'o', markersize = 4, color = color_dict[key])
-    # ax.set_xlim(i,i+20)
-    ax.set_ylim(0,800)
+    ax.errorbar(t_measurement, D2c, yerr = eD2c, linewidth =1, label = '', linestyle = '', marker = 'o', markersize = 4, color = color_dict[key])
+    
+    #ax.set_ylim(0,800)
     ax.set_xlabel(r'time (min)', labelpad=10)
     ax.set_ylabel(r'$D_{slow}$ ($\mathrm{\mu m^2 s^{-1}}$)', labelpad=10)
     plt.savefig('./Figures/Slow_diffusion_coeff_' + key +'.png', dpi=300, transparent=False, bbox_inches='tight')
@@ -432,9 +455,8 @@ for name in glob.glob(path + "dextran_4k_5_min_10_14_21.dat"):
     width = 3.42
     fig = plt.figure(figsize=(width,width/1.62))
     ax = fig.add_axes([0, 0, 1, 1])
-    # ax.errorbar(t_measurement, Rh2c, yerr = err_Rh2c, linewidth =1, label = '', linestyle = '', marker = 'o', markersize = 4, color = color_dict[key])
-    ax.set_ylim(0,5)
-    # ax.set_xlim(i,i+20)
+    ax.errorbar(t_measurement, Rh2c, yerr = err_Rh2c, linewidth =1, label = '', linestyle = '', marker = 'o', markersize = 4, color = color_dict[key])
+    #ax.set_ylim(0,5)
     ax.set_xlabel(r'time (min)', labelpad=10)
     ax.set_ylabel(r'$R_{h}^{slow}$ (nm)', labelpad=10)
     plt.savefig('./Figures/Slow_Rh_' + key + '.png', dpi=300, transparent=False, bbox_inches='tight')
@@ -442,9 +464,8 @@ for name in glob.glob(path + "dextran_4k_5_min_10_14_21.dat"):
     width = 3.42
     fig = plt.figure(figsize=(width,width/1.62))
     ax = fig.add_axes([0, 0, 1, 1])
-    # ax.set_xlim(i,i+20)
-    ax.set_ylim(0,1)
-    # ax.errorbar(t_measurement, p1, yerr = p1_err, linewidth =1, label = '', linestyle = '', marker = 'o', markersize = 4, color = color_dict[key])
+    #ax.set_ylim(0,1)
+    ax.errorbar(t_measurement, p1, yerr = p1_err, linewidth =1, label = '', linestyle = '', marker = 'o', markersize = 4, color = color_dict[key])
     ax.set_xlabel(r'time (min)', labelpad=10)
     ax.set_ylabel(r'$f_{slow}$', labelpad=10)
     plt.savefig('./Figures/Slow_frac_' + key + '.png', dpi=300, transparent=False, bbox_inches='tight')
@@ -452,12 +473,11 @@ for name in glob.glob(path + "dextran_4k_5_min_10_14_21.dat"):
     width = 3.42
     fig = plt.figure(figsize=(width,width/1.62))
     ax = fig.add_axes([0, 0, 1, 1])
-    # ax.set_xlim(i,i+20)
-    # ax.errorbar(t_measurement, N_2c, yerr = N_2c_err, linewidth =1, label = '', linestyle = '', marker = 'o', markersize = 4, color = color_dict[key])
+    ax.errorbar(t_measurement, N_2c, yerr = N_2c_err, linewidth =1, label = '', linestyle = '', marker = 'o', markersize = 4, color = color_dict[key])
     ax.set_xlabel(r'time (min)', labelpad=10)
     ax.set_ylabel(r'N', labelpad=10)
     plt.savefig('./Figures/Nmol2comp_' + key + '.png', dpi=300, transparent=False, bbox_inches='tight')
-
+    
     ''' Plots for 1-comp fitting 
     '''''''''''''''''''''''''''''''''''''''
     '''
@@ -501,7 +521,7 @@ for name in glob.glob(path + "dextran_4k_5_min_10_14_21.dat"):
     ax.set_xlabel(r'time (min)', labelpad=10)
     ax.set_ylabel(r'Fraction trip', labelpad=10)
     plt.savefig('./Figures/frac_trip_' + key + '.png', dpi=300, transparent=False, bbox_inches='tight')
-
+    
     width = 3.42
     fig = plt.figure(figsize=(width,width/1.62))
     ax = fig.add_axes([0, 0, 1, 1])
@@ -513,14 +533,14 @@ for name in glob.glob(path + "dextran_4k_5_min_10_14_21.dat"):
     
     
     #Diffusion Time 1
-    with open('./Results/'+ name + '_Dt_fast_' + key + '.dat', "w" ) as f:
+    with open('./Results/'+ name + '_tD_fast_' + key + '.dat', "w" ) as f:
         f.write('t \t T1 \t err \n')
         for t,R,err in zip(t_measurement, tau_fast2c, tau_fast_err2c):
             f.write('%.3f \t %.3f \t %.3f \n' %(t,R,err))
      
         
     #Diffusion Time 2
-    with open('./Results/'+ name + '_Dt_slow_' + key + '.dat', "w" ) as f:
+    with open('./Results/'+ name + '_tD_slow_' + key + '.dat', "w" ) as f:
         f.write('t \t T2 \t err \n')
         for t,R,err in zip(t_measurement, tau_slow2c, tau_slow_err2c):
             f.write('%.3f \t %.3f \t %.3f \n' %(t,R,err))
@@ -543,7 +563,8 @@ for name in glob.glob(path + "dextran_4k_5_min_10_14_21.dat"):
         for t,R,err in zip(t_measurement, Rh2c,err_Rh2c):
             f.write('%.3f \t %.3f \t %.3f \n' %(t,R,err))
        
-       
+    #Rh second two component?
+    
     # #Weight of component 2
     with open('./Results/'+ name + '_p1_' + key + '.dat', "w" ) as f:
         f.write('t \t P2 \t err \n')
@@ -651,4 +672,32 @@ for name in glob.glob(path + "dextran_4k_5_min_10_14_21.dat"):
     
     
     
-
+    ###MARKED FOR DELETION###
+    '''
+    w = (4*D_ref*td_ref)**(0.5) #um
+    w = w*(1e-6) #now in meters
+    # print(w)
+    kappa = set_kappa
+    Veff = ((np.pi)**(3/2)) * set_kappa * (w**3) #in m^3
+    
+    #1 m^3 = 1000 L
+    #
+    
+    Veff = Veff *1000 #now in L 
+    
+    print('width in nm')
+    print(w*1e9)
+    print('Veff in fL')
+    print(Veff*1E15)
+    
+    
+    N = ufloat(np.mean(N_1c), np.std(N_1c)) #particles
+    N = N/(6.022E23) #particles/(particles/mol)  = mol
+    
+    C = N/Veff #mol / L = M
+    print('Concentration in nM')
+    print(C*1e9)
+    '''
+        
+        
+    

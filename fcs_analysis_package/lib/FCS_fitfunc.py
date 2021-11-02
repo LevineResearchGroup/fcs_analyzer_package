@@ -24,11 +24,15 @@ def twocomp_diff3d(timelag, p1, tau_diff1, tau_diff2, A0, Ginf, kappa):
     return (A0*(diffusion_3d(timelag, tau_diff1, p1, 0, kappa) + diffusion_3d(timelag, tau_diff2, 1 - p1, 0, kappa)) + Ginf)    
 
 ''' Triplet and Diffusion model '''
+
+def triplet(timelag, tau_t, T):
+    return (1- T + T*np.exp(-timelag/tau_t))*(1/(1-T))
+
 def diffusion_3d_triplet(timelag, tau_diff, tau_t, T, A0, Ginf, kappa):
-    return (diffusion_3d(timelag, tau_diff, A0, Ginf, kappa) * 1/(1 - T) * (1 - T + T * e**(-timelag/tau_t)))
+    return (diffusion_3d(timelag, tau_diff, A0, Ginf, kappa) * triplet(timelag, tau_t, T))
 
 def twocomp_diffusion_3d_triplet(timelag, p1, tau_diff1, tau_diff2, tau_t, T, A0, Ginf, kappa):
-    return (twocomp_diff3d(timelag, p1, tau_diff1, tau_diff2, A0, Ginf, kappa) * 1/(1 - T) * (1 - T + T * e**(-timelag/tau_t)))
+    return (twocomp_diff3d(timelag, p1, tau_diff1, tau_diff2, A0, Ginf, kappa) * triplet(timelag, tau_t, T))
 
 
 ''' Kinetic contribution due to FRET'''

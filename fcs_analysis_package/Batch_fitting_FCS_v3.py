@@ -154,8 +154,8 @@ t_min = 1e-4 #ms
 t_max = 1e7 #ms
 
 '''Input Paramaters (from calibration-see FCS_calibration.py)'''
-set_kappa = 6.5847                  # from calibration
-td_ref = ufloat(0.0358, 0.0001)     # from calibration (ms), A488 
+set_kappa = 7.799                  # from calibration
+td_ref = ufloat(0.0353, 0.0001)     # from calibration (ms), A488 
 D_ref = ufloat(470, 40)             # from literature, for calibration (um^2/s), Rho110 470 um^2/s  
 temperature_ref = ufloat(25, 0.5)   # temperature at which reference D was taken (celsius)
 temperature_lab = ufloat(21,0.5)    # our labs temeprature (celsius)
@@ -412,6 +412,7 @@ for name in glob.glob(path + "dextran_40k_5_min_10_20_21.dat"):
     print('Mean 1-comp diffusion time = %.4f +/- %.5f ms' %(np.mean(tau_1c), np.std(tau_1c, ddof =1)))
     print('Mean 1-comp diffusion coeff = %.4f +/- %.5f um^2 s^-1' %(np.mean(D1c), np.std(D1c, ddof =1)))
     print('Mean 1-comp Rh = %.4f +/- %.5f nm' %(np.mean(Rh1c), np.std(Rh1c, ddof =1)))
+    print('Mean 1-comp N = %.4f +/- %.5f nm' %(np.mean(N_1c), np.std(N_1c, ddof =1)))
     print('Mean 1-comp redchi = %.4f +/- %.5f' %(np.mean(redchi1c), np.std(redchi1c, ddof =1)))
     
     print('Mean 2-comp slow diffusion time = %.4f +/- %.5f ms' %(np.mean(tau_slow2c), np.std(tau_slow2c, ddof =1)))

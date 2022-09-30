@@ -28,10 +28,10 @@ plt.ylabel('log Rh')
 # plt.yscale('log')
 # plt.xscale('log')
 
-MW_0 = 90000 #Da molecular weight
-print(np.exp( m*np.log(MW_0) + b))
+MW_0 = 220000 #Da molecular weight
+print(np.exp( m*np.log10(MW_0) + b))
 
-R_0 = 4.09 #nm stokes radius
+R_0 = 5 #nm stokes radius
 MW_est = 1000*np.exp((np.log(R_0)-b)/m)
 
 print(MW_est)

@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 # from uncertainties import ufloat
 # from uncertainties.umath import *
 import pandas as pd
-from scipy import stats
 import seaborn as sns
 from scipy.ndimage.filters import uniform_filter1d
 

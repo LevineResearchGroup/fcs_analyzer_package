@@ -1,6 +1,12 @@
+Purpose: To effeciently analyze FCS data and create plots, summary tables, and output files for easy analysis and compartmentalization of FCS data.
 
 ########################Symphotime instructions########################
-See powerpoint for more detailed instructions
+
+See Github for more detailed instructions.
+https://github.com/LevineResearchGroup/fcs_analyzer_package
+
+To prepare files for analysis follow the steps below.
+
 In Symphotime use the following settings to create FCS curves:
 
 FRET-FCS

@@ -59,7 +59,7 @@ def calibration(t, G, err, kappa = 5):
 # measurement_group = spt.Read_FCS('./Data/A488_A594_FRET_FCS_grouped.dat')
 
 # measurement_group = spt.Read_FCS('/Users/bab226/Documents/yale_research/iapp/fcs/fcs-analysis-package/Data/BB_IAPP_SEC_fractions_08-17-21.sptw/calibration/')
-measurement_group = spt.Read_FCS('/Users/bab226/Documents/yale_research/iapp/fcs/fcs_analyzer_package/fcs_analysis_package/Data/BB_dextran_mixtures.sptw/calibration/rho110_10_15_21')
+measurement_group = spt.Read_FCS('/Users/bab226/Documents/yale_research/iapp/fcs/fcs_analyzer_package/fcs_analysis_package/Data/BB_thermo_sds_iao_step_dilutions_01-28-22.sptw/rho110_20C_01-28-22')
 
 # Possible key values are DD (autocorrelation Donor Donor), AA (auto, accepptor acceptor), DxA (donor acceptor cross correlation)
 key = 'DD'

@@ -102,10 +102,10 @@ def simplefit(t, G, err, kappa = 5, triplet = False, t_min = 1E-9, t_max = 1e7):
 
 ## Autocorrelation of donor, receptor, or cross-correlation?
 # Possible key values are DD (autocorrelation Donor Donor), AA (auto, accepptor acceptor), DxA (donor acceptor cross correlation)
-key = 'AA'
+key = 'DD'
 
 #Fitting Model (Triplet? True/False)
-triplet = True
+triplet = False
 
 ##Min and max for fitting (units of ms).
 #Use really low and high values to use all data.
@@ -113,19 +113,20 @@ t_min = 1e-4 #ms
 t_max = 1e7 #ms
 
 '''Input Paramaters (from calibration-see FCS_calibration.py)'''
-# set_kappa = 7.9160                  # from calibration, A488
-set_kappa = 6                         # from calibration, A594
-# td_ref = ufloat(0.0381, 0.0005)     # from calibration (ms), A488 
-td_ref = ufloat(0.0608, 0.0006)     # from calibration (ms), A594
-D_ref = ufloat(470, 40)             # from literature, for calibration (um^2/s), Rho110 470 um^2/s  
-temperature_ref = ufloat(25, 0.5)   # temperature at which reference D was taken (celsius)
-temperature_lab = ufloat(21, 0.5)   # our labs temeprature (celsius)
+set_kappa = 6.7085                   # from calibration, A488
+# set_kappa = 6.85                     # from calibration, A594
+td_ref = ufloat(0.0381, 0.00018)     # from calibration (ms), A488 
+# td_ref = ufloat(0.0659, 0.00077)     # from calibration (ms), A594
+D_ref = ufloat(470, 40)              # from literature, for calibration (um^2/s), Rho110, 470 um^2/s, 25 C
+# D_ref = ufloat(350, 40)              # from literature, for calibration (um^2/s), a594-SDP, 350 um^2/s, 25 C
+temperature_ref = ufloat(25, 0.5)    # temperature at which reference D was taken (celsius)
+temperature_lab = ufloat(21.5, 0.5)    # our labs temeprature (celsius)
     
 Toffset = 0 #offset the time axis by some amount (make sure consistent with units for measurement_time (i.e., minutes, hours?))
 
 #FIXME, put your own path HERE
-path = "/Users/bab226/Documents/yale_research/iapp/fcs/fcs_analyzer_package/fcs_analysis_package/Data/thermo_iapp_test.sptw/"
-for name in glob.glob(path + "hiapp_nterm_a594_test.dat"):
+path = "/Users/bab226/Documents/yale_research/iapp/fcs/fcs_analyzer_package/fcs_analysis_package/Data/BB_thermo_iao_sds_dilutions_02-11-22.sptw/day1/"
+for name in glob.glob(path + "*.dat"):
     name = os.path.basename(name)[:-4]
     measurement_group = spt.Read_FCS(path + name)
     # measurement_group = spt.Read_FCS('')

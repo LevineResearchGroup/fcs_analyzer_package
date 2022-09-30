@@ -102,3 +102,8 @@ def global_E_data(Gdd,Gaa,Gx, errdd, erraa, errx):
     
     err_global = np.concatenate((errdd,erraa,errx), axis = None)
     return G_global, err_global
+
+''' Guassian fit for maximum entropy analysis '''
+def gaussian(log_D, a, mu, sigma):
+    #Single gaussian form
+    return (a*np.e**((-(log_D-mu)**2)/2*sigma**2))
